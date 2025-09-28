@@ -7,13 +7,13 @@ import { getAnalytics } from "firebase/analytics";
 
 // あなたのFirebaseプロジェクト設定に置き換えてください
 const firebaseConfig = {
-    apiKey: "AIzaSyB4Vcbc2mSsWiiETj_TgmM9WXawi8AzUDQ",
-    authDomain: "thatumei-portal.firebaseapp.com",
-    projectId: "thatumei-portal",
-    storageBucket: "thatumei-portal.firebasestorage.app",
-    messagingSenderId: "637926976955",
-    appId: "1:637926976955:web:39071a369d05cc07c4289e",
-    measurementId: "G-V62SQ4NL7V"
+    apiKey: "AIzaSyC2lsyGPAsQnFpK7A1GQaT0qW6-DG3VwMw",
+  authDomain: "thatumei-portals.firebaseapp.com",
+  projectId: "thatumei-portals",
+  storageBucket: "thatumei-portals.firebasestorage.app",
+  messagingSenderId: "951780186243",
+  appId: "1:951780186243:web:c165895d9a98030d3e63b6",
+  measurementId: "G-T3GBLJH0MP"
 };
 
 // Firebaseを初期化

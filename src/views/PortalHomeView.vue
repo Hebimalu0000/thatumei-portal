@@ -85,7 +85,7 @@
 import { computed } from 'vue';
 import { useMainStore } from '@/stores/main';
 import { useRouter } from 'vue-router';
-import { logoutAdmin } from '@/utils/auth';
+import { universalLogout } from '@/utils/auth'; // 🔥 universalLogoutをインポート
 
 const mainStore = useMainStore();
 const router = useRouter();
@@ -110,7 +110,7 @@ const isStudentInClass = computed(() => {
 
 const handleLogout = async () => {
   try {
-    await logoutAdmin();
+    await universalLogout(); // 🔥 変更
     router.push({ name: 'portal-login' });
   } catch (error) {
     alert("ログアウト処理に失敗しました。");

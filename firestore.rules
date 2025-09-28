@@ -1,18 +1,49 @@
-rules_version='2'
-
+rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+    
+    // ----------------------------------------------------
+    // 1. 🔥 機密データ (パスワードを含む) はクライアントからのアクセスを完全に禁止 🔥
+    //    ⇒ 認証処理はこのルールが 'false' の状態で行われるため安全
+    // ----------------------------------------------------
+    
+    // 先生のログイン情報 (パスワードを含む)
+    match /teachers/{teacherId} {
+      allow read, write: if false; 
+    }
+    
+    // 生徒のログイン情報 (パスワードを含む)
+    match /students/{studentId} {
+      allow read, write: if false;
+    }
+    
+    // ----------------------------------------------------
+    // 2. 📝 授業データとステータスデータ (生徒/先生が読み取り/書き込みに使用)
+    // ----------------------------------------------------
+
+    // 生徒ステータス (user_status)
+    //   - 生徒がログインした際に自分の状態を取得するために必要
+    //   - 誰でも読み取れるようにするとプライバシー侵害になるため、
+    //     ここでは原則としてアクセスを禁止しますが、
+    //     もし生徒IDとFirestore IDが一致しているなら以下のルールを適用します。
+    //     ただし、Firebase Authがないため、ここは複雑になります。
+    //     ⇒ 認証がクライアントで行われるため、アクセスは全て 'false' で運用することを推奨。
+    match /user_status/{userId} {
+      allow read, write: if false;
+    }
+    
+    // 現在のイベント/授業情報 (全員が読み取り可能)
+    match /active_events/{eventId} {
+      // ログイン済みチェックがないため、全員に読み取りを許可 (授業中であれば問題ないデータと仮定)
+      allow read: if true; 
+      allow write: if false; // 書き込みは管理者のみ
+    }
+
+    // ----------------------------------------------------
+    // 3. その他、全てのドキュメントへのアクセスを禁止
+    // ----------------------------------------------------
     match /{document=**} {
-      // This rule allows anyone with your database reference to view, edit,
-      // and delete all data in your database. It is useful for getting
-      // started, but it is configured to expire after 30 days because it
-      // leaves your app open to attackers. At that time, all client
-      // requests to your database will be denied.
-      //
-      // Make sure to write security rules for your app before that time, or
-      // else all client requests to your database will be denied until you
-      // update your rules.
-      allow read, write: if request.time < timestamp.date(2025, 10, 27);
+      allow read, write: if false;
     }
   }
 }

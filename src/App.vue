@@ -13,7 +13,7 @@
           管理ボード
         </router-link>
         <button 
-          v-if="mainStore.isAdminLoggedIn" 
+          v-if="mainStore.isLoggedIn" 
           @click="handleLogout" 
           class="logout-button nav-link"
         >
@@ -21,7 +21,7 @@
         </button>
         <router-link 
           v-else 
-          to="/"
+          to="/login"
           class="nav-link"
         >
           ログイン
@@ -41,33 +41,30 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { auth } from '@/firebaseConfig';
-import { onAuthStateChanged } from 'firebase/auth';
+// 🔥 Firebase Auth 関連のインポートは不要なため削除 🔥
+// import { auth } from '@/firebaseConfig'; 
+// import { onAuthStateChanged } from 'firebase/auth'; 
 import { useMainStore } from '@/stores/main';
-import { logoutAdmin } from '@/utils/auth';
+import { universalLogout } from '@/utils/auth'; 
 
 const router = useRouter();
 const mainStore = useMainStore();
 const isAuthLoading = ref(true);
 
 onMounted(() => {
-  onAuthStateChanged(auth, (user) => {
-    if (user) {
-      // TODO: ここでFirestoreやカスタムクレームをチェックし、本当に「管理者」か確認すべき
-      mainStore.loginAdmin({ 
-        uid: user.uid, 
-        email: user.email 
-      });
-    } else {
-      mainStore.logoutAdmin(); 
-    }
-    isAuthLoading.value = false; 
-  });
+  // 🔥 修正: Firebase Authのチェックを削除し、ローディング状態をすぐに解除 🔥
+  // 永続的なログイン状態の復元は、通常Piniaやルーターガードで行われます。
+  
+  // 実際のアプリケーションでは、ここでローカルストレージなどからトークンを復元する処理が入ります
+  // 例: await mainStore.restoreSession(); 
+
+  // 簡略化のため、すぐにローディングを解除します。
+  isAuthLoading.value = false;
 });
 
 const handleLogout = async () => {
   try {
-    await logoutAdmin();
+    await universalLogout();
     router.push({ name: 'portal-login' });
   } catch (error) {
     alert("ログアウト処理に失敗しました。");

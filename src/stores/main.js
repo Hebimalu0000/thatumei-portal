@@ -48,12 +48,14 @@ export const useMainStore = defineStore('main', {
       this.adminUser = null;
     },
 
-    async logoutAdmin() {
+    async logout() {
       // ログアウトは全状態をリセット
       this.isAdminLoggedIn = false;
       this.isStudentLoggedIn = false;
       this.adminUser = null;
       this.studentUser = null;
+      this.studentStatus = null;
+      this.error = null;
     },
     
     /**

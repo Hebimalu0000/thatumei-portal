@@ -1,7 +1,7 @@
 {
   "firestore": {
     "database": "(default)",
-    "location": "asia-southeast2",
+    "location": "asia-northeast2",
     "rules": "firestore.rules",
     "indexes": "firestore.indexes.json"
   },
@@ -11,12 +11,15 @@
       "firebase.json",
       "**/.*",
       "**/node_modules/**"
+    ],
+    "rewrites": [
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
     ]
   },
   "emulators": {
-    "auth": {
-      "port": 9099
-    },
     "firestore": {
       "port": 8080
     },
