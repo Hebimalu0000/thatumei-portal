@@ -3,6 +3,7 @@
 import { initializeApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
+import { getAnalytics } from "firebase/analytics";
 
 // あなたのFirebaseプロジェクト設定に置き換えてください
 const firebaseConfig = {

@@ -7,7 +7,10 @@ export const useMainStore = defineStore('main', {
   state: () => ({
     // 認証状態
     isAdminLoggedIn: false,
-    adminUser: null, // ログイン中の管理者情報
+    isStudentLoggedIn: false, // 生徒ログイン状態を追加
+    adminUser: null, 
+    studentUser: null, // 生徒情報も保持
+    studentStatus: null,
 
     // アプリケーションデータ
     students: [],    // 学生名簿データ
@@ -31,17 +34,26 @@ export const useMainStore = defineStore('main', {
      */
     async loginAdmin(user) {
       this.isAdminLoggedIn = true;
+      this.isStudentLoggedIn = false;
       this.adminUser = user;
-      // ログイン成功後のリダイレクト処理を呼び出し元で行う
+      this.studentUser = null;
+    },
+    
+    // 🔥 生徒ログインアクションを追加 🔥
+    async loginStudent(user) {
+      this.isStudentLoggedIn = true;
+      this.isAdminLoggedIn = false;
+      this.studentUser = user;
+      this.studentStatus = status; // 🔥 ステータスを保存
+      this.adminUser = null;
     },
 
-    /**
-     * 管理者ログアウト処理
-     */
     async logoutAdmin() {
+      // ログアウトは全状態をリセット
       this.isAdminLoggedIn = false;
+      this.isStudentLoggedIn = false;
       this.adminUser = null;
-      // Firebaseログアウト処理をここに追加
+      this.studentUser = null;
     },
     
     /**
