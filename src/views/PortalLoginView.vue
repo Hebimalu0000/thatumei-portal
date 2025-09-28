@@ -63,17 +63,20 @@ const handleLogin = async () => {
   try {
     const result = await universalLogin(identifier.value, password.value);
 
+    console.log(result);
+
     if (result.isAdministrator) {
       // 🔥 先生(管理者)の場合、直接ダッシュボードへ
       router.push({ name: 'admin-dashboard' }); 
     } else {
       // 🔥 生徒の場合、ポータルホームへ
-      router.push({ name: 'portal-home' }); 
+      router.push({ name: 'dashboard' }); 
     }
 
-  } catch (e) {
+  } /*catch (e) {
     errorMessage.value = mainStore.error || "予期せぬエラーが発生しました。";
-  } finally {
+    console.error(mainStore.error);
+  } */finally {
     isLoading.value = false;
   }
 };

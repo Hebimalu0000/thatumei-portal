@@ -8,6 +8,7 @@ const AttendanceView = () => import('../views/AttendanceView.vue');
 const AdminLoginView = () => import('../views/AdminLoginView.vue');
 const AdminDashboardView = () => import('../views/AdminDashboardView.vue');
 const PortalLoginView = () => import('../views/PortalLoginView.vue')
+const PortalHomeView = () => import('../views/PortalHomeView.vue');
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -38,7 +39,16 @@ const router = createRouter({
         title: '管理ダッシュボード',
         requiresAuth: true // 認証が必要なルートであることを示す
       }
-    }
+    },
+    {
+      path: '/dashboard',
+      name: 'dashboard',
+      component: PortalHomeView,
+      meta: { 
+        title: 'ダッシュボード',
+        //requiresAuth: true // 認証が必要なルートであることを示す
+      }
+    },
   ]
 });
 
