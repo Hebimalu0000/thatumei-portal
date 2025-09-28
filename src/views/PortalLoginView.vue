@@ -73,10 +73,10 @@ const handleLogin = async () => {
       router.push({ name: 'dashboard' }); 
     }
 
-  } /*catch (e) {
+  } catch (e) {
     errorMessage.value = mainStore.error || "予期せぬエラーが発生しました。";
     console.error(mainStore.error);
-  } */finally {
+  } finally {
     isLoading.value = false;
   }
 };
