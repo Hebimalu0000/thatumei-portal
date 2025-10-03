@@ -6,16 +6,16 @@
       </div>
 
       <form @submit.prevent="handleLogin" class="login-form">
-        <h2 class="form-title">ポータルログイン</h2>
+        <h2 class="form-title">生徒ポータルログイン</h2>
         
         <div class="form-group">
-          <label for="identifier">ID (例: T001 または S2024001)</label>
+          <label for="identifier">生徒ID (例: S00S000)</label>
           <input 
             type="text" 
             id="identifier" 
             v-model="identifier" 
             required
-            placeholder="TまたはSから始まるIDを入力"
+            placeholder="Sから始まる生徒IDを入力"
             autocomplete="username"
           />
         </div>
@@ -37,6 +37,11 @@
 
         <p v-if="errorMessage" class="error-message">{{ errorMessage }}</p>
       </form>
+
+      <!-- 💡 講師・管理者向けの導線フッターを追加 -->
+      <div class="footer-link">
+          <router-link :to="{ name: 'teacher-login' }">講師・管理者ログインはこちら &rarr;</router-link>
+      </div>
     </div>
   </div>
 </template>
@@ -45,37 +50,48 @@
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useMainStore } from '@/stores/main';
-import { universalLogin } from '@/utils/auth'; // 修正した統合ログイン関数をインポート
+import { universalLogin } from '@/utils/auth'; 
 
 const router = useRouter();
 const mainStore = useMainStore();
 
-const identifier = ref('');
+// ユーザーID入力欄
+const identifier = ref(''); 
 const password = ref('');
 const isLoading = ref(false);
 const errorMessage = ref(null);
 
 const handleLogin = async () => {
-  errorMessage.value = null;
+  errorMessage.value = null; 
   isLoading.value = true;
-  mainStore.error = null;
+  mainStore.setError(null); 
 
   try {
+    // 💡 IDの形式が生徒（S）以外の場合はここで先に弾く（UI上の便宜）
+    if (!identifier.value.toUpperCase().startsWith('S')) {
+        errorMessage.value = "生徒IDは'S'から始まります。講師・管理者の方は下部のリンクをご利用ください。";
+        return;
+    }
+    
+    // universalLoginを実行
     const result = await universalLogin(identifier.value, password.value);
 
-    console.log(result);
-
-    if (result.isAdministrator) {
-      // 🔥 先生(管理者)の場合、直接ダッシュボードへ
-      router.push({ name: 'admin-dashboard' }); 
-    } else {
-      // 🔥 生徒の場合、ポータルホームへ
-      router.push({ name: 'dashboard' }); 
+    // ログイン成功: 生徒用ポータルのため、無条件で生徒ダッシュボードへ
+    if (result.success) {
+      if (result.isAdministrator || result.isTeacher) {
+        // 💡 認証は成功したが、権限が管理者/講師だった場合
+        errorMessage.value = "このログイン画面は生徒専用です。講師・管理者アカウントでログインするには、下部のリンクをご利用ください。";
+        // ログアウト処理を追加することが望ましいが、ここではリダイレクトしないことで対処
+      } else {
+        // 生徒アカウントでのログイン成功
+        router.push({ name: 'dashboard' }); 
+      }
     }
 
   } catch (e) {
-    errorMessage.value = mainStore.error || "予期せぬエラーが発生しました。";
-    console.error(mainStore.error);
+    // 認証失敗時やその他のエラーを捕捉し、ユーザーに表示
+    errorMessage.value = mainStore.error || "IDまたはパスワードが正しくありません。";
+    console.error("Login attempt failed:", e); 
   } finally {
     isLoading.value = false;
   }
@@ -83,7 +99,7 @@ const handleLogin = async () => {
 </script>
 
 <style scoped>
-/* スタイルは前回のパステル調UIを維持 */
+/* スタイルはそのまま維持 */
 .portal-login-container {
   display: flex;
   flex-direction: column;
@@ -160,6 +176,7 @@ input:focus {
   font-weight: 700;
   cursor: pointer;
   box-shadow: 0 4px 6px rgba(128, 255, 180, 0.4);
+  transition: background-color 0.2s, transform 0.2s, box-shadow 0.2s;
 }
 
 .login-button:hover {
@@ -172,6 +189,7 @@ input:focus {
   color: #888;
   cursor: not-allowed;
   box-shadow: none;
+  transform: translateY(0);
 }
 
 .error-message {
@@ -183,5 +201,26 @@ input:focus {
   margin-top: 20px;
   font-weight: 500;
   border: 1px solid #ffaaaa;
+}
+
+/* 💡 講師・管理者へのリンクスタイル */
+.footer-link {
+    text-align: center;
+    margin-top: 25px;
+    padding-top: 20px;
+    border-top: 1px solid #eee;
+}
+
+.footer-link a {
+    color: #80aeff;
+    font-size: 0.9em;
+    font-weight: 600;
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+.footer-link a:hover {
+    color: #4d90fe;
+    text-decoration: underline;
 }
 </style>

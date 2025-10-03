@@ -1,81 +1,129 @@
-// src/stores/main.js
-
 import { defineStore } from 'pinia';
+import { ref, computed } from 'vue';
 
-// 認証状態や、イベント情報などを一元管理するストア
-export const useMainStore = defineStore('main', {
-  state: () => ({
-    // 認証状態
-    isAdminLoggedIn: false,
-    isStudentLoggedIn: false, // 生徒ログイン状態を追加
-    adminUser: null, 
-    studentUser: null, // 生徒情報も保持
-    studentStatus: null,
+export const useMainStore = defineStore('main', () => {
+    // --- 状態 (State) ---
+    const user = ref(null);
+    const error = ref(null); 
+    // ⭐ 追加: ローカルストレージからの初期化が完了したかどうかのフラグ
+    const isStoreInitialized = ref(false); 
 
-    // アプリケーションデータ
-    students: [],    // 学生名簿データ
-    activeEvents: [], // 現在アクティブな授業イベントリスト
-    isLoading: false, // データロード中フラグ
-    error: null,      // エラーメッセージ
-  }),
-  
-  getters: {
-    // ログイン状態を取得
-    isLoggedIn: (state) => state.isAdminLoggedIn,
-    // 名簿がロードされているか確認
-    hasStudents: (state) => state.students.length > 0,
-  },
+    // --- ゲッター (Getters / Computed) ---
+    const isLoggedIn = computed(() => !!user.value);
+    const userId = computed(() => user.value?.uid || null);
+    const isAdminLoggedIn = computed(() => user.value?.role === 'admin');
+    const isTeacherLoggedIn = computed(() => user.value?.role === 'teacher');
+    const isStudentLoggedIn = computed(() => user.value?.role === 'student');
 
-  actions: {
-    /**
-     * 管理者ログイン処理（ダミー）
-     * 実際の処理はFirebase Authenticationを使用します
-     * @param {object} user - 認証済みのユーザー情報
-     */
-    async loginAdmin(user) {
-      this.isAdminLoggedIn = true;
-      this.isStudentLoggedIn = false;
-      this.adminUser = user;
-      this.studentUser = null;
-    },
-    
-    // 🔥 生徒ログインアクションを追加 🔥
-    async loginStudent(user) {
-      this.isStudentLoggedIn = true;
-      this.isAdminLoggedIn = false;
-      this.studentUser = user;
-      this.studentStatus = status; // 🔥 ステータスを保存
-      this.adminUser = null;
-    },
+    // --- アクション (Actions) ---
 
-    async logout() {
-      // ログアウトは全状態をリセット
-      this.isAdminLoggedIn = false;
-      this.isStudentLoggedIn = false;
-      this.adminUser = null;
-      this.studentUser = null;
-      this.studentStatus = null;
-      this.error = null;
-    },
-    
-    /**
-     * 学生名簿とアクティブなイベントをFirestoreから読み込む処理
-     * @param {function} fetchStudents - Firestoreから名簿を取得する非同期関数
-     * @param {function} fetchEvents - Firestoreからイベントを取得する非同期関数
-     */
-    async fetchInitialData(fetchStudents, fetchEvents) {
-      this.isLoading = true;
-      this.error = null;
-      try {
-        // 例: Firestoreからデータを取得する処理（引数として渡された関数を実行）
-        this.students = await fetchStudents();
-        this.activeEvents = await fetchEvents();
-      } catch (err) {
-        this.error = 'データの読み込みに失敗しました。';
-        console.error(err);
-      } finally {
-        this.isLoading = false;
-      }
+    // 共通のユーザー設定関数 (以前の定義をベースに)
+    function setUser(userData, role, optionalData = {}) {
+        user.value = {
+            uid: userData.id || userData.uid,
+            ...userData,
+            role: role,
+            ...optionalData 
+        };
+        delete user.value.password; 
+        error.value = null;
+        console.log(`Pinia: User set successfully (${role}).`, user.value);
     }
-  }
+    
+    // 管理者ログインアクション
+    function loginAdmin(userData) {
+        setUser(userData, 'admin');
+    }
+
+    // 講師ログインアクション
+    function loginTeacher(userData) {
+        setUser(userData, 'teacher');
+    }
+    
+    // 生徒ログインアクション
+    function loginStudent(userData, studentStatus) {
+        setUser(userData, 'student', { studentStatus });
+    }
+    
+    function clearUser() {
+        user.value = null;
+        error.value = null;
+        console.log("Pinia: User logged out.");
+    }
+
+    function setError(errorMessage) {
+        error.value = errorMessage;
+        if (errorMessage) {
+            console.error("Pinia Error:", errorMessage);
+        }
+    }
+    
+    /**
+     * ⭐ 新規追加: localStorageから情報をロードし、ストアを初期化する
+     */
+    function initializeStoreFromLocalStorage() {
+        if (isStoreInitialized.value) return; // 二重初期化を防止
+
+        try {
+            const storedData = localStorage.getItem('userSession');
+            if (storedData) {
+                const session = JSON.parse(storedData);
+                
+                // ロールを特定
+                let role = '';
+                if (session.isAdministrator) {
+                    role = 'admin';
+                } else if (session.isTeacher) {
+                    role = 'teacher';
+                } else if (session.id.startsWith('S') && session.grade) { 
+                    // 生徒の場合（gradeの存在で判断を強化）
+                    role = 'student';
+                }
+
+                if (role) {
+                    // ローカルデータから読み込んだ情報でユーザー状態を復元
+                    // ※ 注意: Firestoreから最新のユーザー名や権限を再取得するのがより安全ですが、
+                    // ここではlocalStorageのデータのみでPiniaの状態を更新します。
+                    const recoveredUserData = {
+                        uid: session.uid,
+                        id: session.id,
+                        name: session.name,
+                        grade: session.grade, // 生徒の場合のみ
+                        // ... その他の必要なセッションデータ
+                    };
+                    
+                    // 復元したデータを使ってsetUser（または対応するlogin関数）を呼び出す
+                    // 🚨 ここではsetUserを復元用として統一的に使用します
+                    setUser(recoveredUserData, role); 
+                    console.log("Pinia: LocalStorageからユーザーセッションを復元しました。");
+                }
+            }
+        } catch (e) {
+            console.error("LocalStorageからの読み込みに失敗しました:", e);
+            // 失敗した場合は localStorage の不正なデータをクリア
+            localStorage.removeItem('userSession');
+        } finally {
+            isStoreInitialized.value = true;
+        }
+    }
+
+
+    return {
+        user,
+        error,
+        isStoreInitialized, // ゲッターに追加
+        isLoggedIn,
+        userId,
+        isAdminLoggedIn,
+        isTeacherLoggedIn,
+        isStudentLoggedIn,
+        // アクション
+        loginAdmin,
+        loginTeacher,
+        loginStudent,
+        setUser, 
+        clearUser,
+        setError,
+        initializeStoreFromLocalStorage, // ⭐ 新しい初期化アクション
+    };
 });
